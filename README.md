@@ -79,13 +79,13 @@ You can use a combination of the following commandline argument flags to exclude
 
 
 
-# Why
+## Why
 
 With the information about matching, changed, new and removed files we can keep track of a specific directory.
 I use this in a honey pot environment I'm working on, to detect changes to the filesystem and trigger scripts.
 
 
-# License
+## License
 
 ```
 
@@ -106,6 +106,6 @@ I use this in a honey pot environment I'm working on, to detect changes to the f
 ```
 
 
-# Fork me
+## Fork me
 
 Use the fork luke.
