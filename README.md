@@ -6,6 +6,8 @@ hcheck takes a sha256sum file input and checks if the hashes either matches,
 mismatches, are new or have been removed.
 
 
+## Basic Usage
+
 Given the following directory structure...
 
 ```
@@ -64,6 +66,17 @@ e9c3d6e78375b7350ae37cac2ce6040b2bbbfee92440e9cfb7b461643e2a170e  tst/file1.bin:
 294e1ef3296ec3b9e19a4acd0ecd3344aff767e7529eec0e2295bb7f69ca13f8  tst/sub/new_file.bin: NEW
 33b999f808fda86a6bb9cb583a97c66775a6f9bd3602c4cceb27b235d697c7e3  tst/sub/directory/file2.bin: REMOVED
 ```
+
+
+### Filtering file status
+
+You can use a combination of the following commandline argument flags to exclude certain output:
+
++ `--exclude-mismatch`
++ `--exclude-new`
++ `--exclude-ok`
++ `--exclude-removed`
+
 
 
 # Why
