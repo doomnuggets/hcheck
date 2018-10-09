@@ -22,7 +22,7 @@ tst
 
 We first create a sha256sum of the directory tree:
 
-```bash
+```sh
 find tst/ -type f -exec sha256sum {} \; > hashes.txt
 
 cat hashes.txt
@@ -32,7 +32,7 @@ cat hashes.txt
 
 We then check if the hashes we just created match:
 
-```
+```sh
 ./hcheck --check-dir tst/ --hash-file hashes.txt
 0fb2eb1d47a1978e2e019e795bca83b758847d590fdef757f749dd44358cc4ef  tst/file1.bin: OK
 33b999f808fda86a6bb9cb583a97c66775a6f9bd3602c4cceb27b235d697c7e3  tst/sub/directory/file2.bin: OK
@@ -41,14 +41,14 @@ We then check if the hashes we just created match:
 As we can see all hashes matched up (status `OK`).
 Let's try and add a new file and modify `file1.bin`
 
-```
+```sh
 echo new_file > tst/sub/new_file.bin
 echo change >> tst/file1.bin
 ```
 
 Now the output of hcheck shows:
 
-```
+```sh
 ./hcheck --check-dir tst/ --hash-file hashes.txt
 
 e9c3d6e78375b7350ae37cac2ce6040b2bbbfee92440e9cfb7b461643e2a170e  tst/file1.bin: MISMATCH
@@ -58,7 +58,7 @@ e9c3d6e78375b7350ae37cac2ce6040b2bbbfee92440e9cfb7b461643e2a170e  tst/file1.bin:
 
 Upon removing a file recorded in the hash file (hashes.txt) we see the following:
 
-```
+```sh
 rm tst/sub/directory/file2.bin
 
 ./hcheck --check-dir tst/ --hash-file hashes.txt
