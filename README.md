@@ -2,8 +2,8 @@
 
 *One of my first Go projects, terrible code.*
 
-hcheck takes a sha256sum file input and checks if the hashes either matches,
-mismatches, are new or have been removed.
+hcheck takes a sha256sum file input and checks if the hashes either match,
+mismatch, new files were created or existing ones have been removed.
 
 
 ## Basic Usage
