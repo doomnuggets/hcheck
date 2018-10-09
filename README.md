@@ -21,7 +21,7 @@ tst
 We first create a sha256sum of the directory tree:
 
 ```bash
-find tst/ -type f -exec sha256sum {} \; > hashes.txt`
+find tst/ -type f -exec sha256sum {} \; > hashes.txt
 
 cat hashes.txt
 0fb2eb1d47a1978e2e019e795bca83b758847d590fdef757f749dd44358cc4ef  tst/file1.bin
