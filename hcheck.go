@@ -125,10 +125,12 @@ func main() {
 			if !*excludeMISMATCH {
 				fmt.Printf("%s  %s: MISMATCH\n", hash, filename)
 			}
-		} else {
+		} else if checksumNew(filename, hash, hashes) {
 			if !*excludeNEW {
 				fmt.Printf("%s  %s: NEW\n", hash, filename)
 			}
+		} else {
+			panic("How the hell did we end up here?")
 		}
 	}
 	// Check for hash file entry files which are missing on the filesystem.
