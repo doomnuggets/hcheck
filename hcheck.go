@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"fmt"
 	flag "github.com/spf13/pflag"
+	"golang.org/x/sys/unix"
 	"io"
 	"log"
 	"os"
@@ -29,7 +30,10 @@ func sha256File(path string) string {
 func fileWalk(location string) chan string {
 	channel := make(chan string)
 	go func() {
-		filepath.Walk(location, func(path string, finfo os.FileInfo, _ error) (err error) {
+		filepath.Walk(location, func(path string, finfo os.FileInfo, walkErr error) (err error) {
+			if walkErr != nil {
+				log.Fatal(walkErr)
+			}
 			if !finfo.IsDir() {
 				channel <- path
 			}
@@ -38,16 +42,6 @@ func fileWalk(location string) chan string {
 		defer close(channel)
 	}()
 	return channel
-}
-
-// Check if a given hash (needle) exists in an array of [filename, hash] (haystack)
-func hashMismatch(hashdigest string, filename string, haystack map[string]string) bool {
-	return haystack[filename] != hashdigest && haystack[filename] != ""
-}
-
-// Check if a given hash and filename exists in an array of [filename, hash] (haystack)
-func hashdigestExistsAndMatches(hashdigest string, filename string, haystack map[string]string) bool {
-	return haystack[filename] == hashdigest
 }
 
 // Parse the sha256sum file into a map of map[filename] = hash
@@ -75,6 +69,22 @@ func parseHashfile(hashFilepath string) map[string]string {
 	return hashMap
 }
 
+func dirReadable(dir string) bool {
+	return unix.Access(dir, unix.R_OK|unix.X_OK) == nil
+}
+
+func checksumOk(filename string, hash string, hashes map[string]string) bool {
+	return hashes[filename] == hash
+}
+
+func checksumMismatch(filename string, hash string, hashes map[string]string) bool {
+	return hashes[filename] != hash && hashes[filename] != ""
+}
+
+func checksumNew(filename string, hash string, hashes map[string]string) bool {
+	return hashes[filename] == ""
+}
+
 func main() {
 	var hashFile = flag.StringP("hash-file", "f", "", "(required) List of hashes to check against.")
 	var checkDir = flag.StringP("check-dir", "c", "", "(required) Directory which is scanned and compared against hashes in the hash file.")
@@ -92,43 +102,40 @@ func main() {
 		flag.Usage()
 		return
 	}
-	if _, err := os.Open(*hashFile); err != nil {
+	if f, err := os.Open(*hashFile); err != nil {
 		log.Print("Unable to open --hash-file=" + *hashFile)
 		log.Fatal(err)
-	}
-	if info, err := os.Stat(*checkDir); err != nil {
-		log.Print("Unable to scan --check-dir=" + *checkDir)
-		log.Fatal(err)
 	} else {
-		if info.Mode().Perm()&(1<<(uint(7))) < 5 {
-			log.Fatal("Permission denied while accessing --check-dir=" + *checkDir)
-		}
+		defer f.Close()
 	}
 
-	if hashFile != nil && checkDir != nil {
-		hashes := parseHashfile(*hashFile)
-		for filename := range fileWalk(*checkDir) {
-			h := sha256File(filename)
-			if hashdigestExistsAndMatches(h, filename, hashes) {
-				if !*excludeOK {
-					fmt.Printf("%s  %s: OK\n", h, filename)
-				}
-			} else if hashMismatch(h, filename, hashes) {
-				if !*excludeMISMATCH {
-					fmt.Printf("%s  %s: MISMATCH\n", h, filename)
-				}
-			} else {
-				if !*excludeNEW {
-					fmt.Printf("%s  %s: NEW\n", h, filename)
-				}
+	if !dirReadable(*checkDir) {
+		log.Fatal("Unable to traverse --check-dir=" + *checkDir)
+		return
+	}
+
+	hashes := parseHashfile(*hashFile)
+	for filename := range fileWalk(*checkDir) {
+		hash := sha256File(filename)
+		if checksumOk(filename, hash, hashes) {
+			if !*excludeOK {
+				fmt.Printf("%s  %s: OK\n", hash, filename)
+			}
+		} else if checksumMismatch(filename, hash, hashes) {
+			if !*excludeMISMATCH {
+				fmt.Printf("%s  %s: MISMATCH\n", hash, filename)
+			}
+		} else {
+			if !*excludeNEW {
+				fmt.Printf("%s  %s: NEW\n", hash, filename)
 			}
 		}
-		// Check for hash file entry files which are missing on the filesystem.
-		if !*excludeREMOVED {
-			for filename, h := range hashes {
-				if _, err := os.Stat(filename); os.IsNotExist(err) {
-					fmt.Printf("%s  %s: REMOVED\n", h, filename)
-				}
+	}
+	// Check for hash file entry files which are missing on the filesystem.
+	if !*excludeREMOVED {
+		for filename, h := range hashes {
+			if _, err := os.Stat(filename); os.IsNotExist(err) {
+				fmt.Printf("%s  %s: REMOVED\n", h, filename)
 			}
 		}
 	}
